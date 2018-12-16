@@ -32,16 +32,17 @@ RANGE_FOR_AREA_0="fd00::/8"
 # Allocates loopbacks
 class LoopbackAllocator(object):
 
-  bit = 64
+  bit = 16
   net = unicode("fdff::/%d" % bit)
-  prefix = 128
+  prefix = 56
 
   def __init__(self): 
     print "*** Calculating Available Loopback Addresses"
-    self.loopbacknet = (IPv6Network(self.net)).hosts()
+    self.loopbacknet = (IPv6Network(self.net)).subnets(new_prefix=LoopbackAllocator.prefix)
   
   def nextLoopbackAddress(self):
-    n_host = next(self.loopbacknet)
+    n_net = next(self.loopbacknet)
+    n_host = next(n_net.hosts())
     return n_host.__str__()
 
 # Allocates router ids
