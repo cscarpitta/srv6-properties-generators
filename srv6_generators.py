@@ -39,7 +39,7 @@ class LoopbackAllocator(object):
   def __init__(self): 
     print "*** Calculating Available Loopback Addresses"
     self.loopbacknet = (IPv6Network(self.net)).subnets(new_prefix=LoopbackAllocator.prefix)
-  
+
   def nextLoopbackAddress(self):
     n_net = next(self.loopbacknet)
     n_host = next(n_net.hosts())
@@ -54,13 +54,13 @@ class RouterIdAllocator(object):
   def __init__(self): 
     print "*** Calculating Available Router Ids"
     self.router_id = (IPv4Network(self._id)).hosts()
-  
+
   def nextRouterId(self):
     n_id = next(self.router_id)
     return n_id.__str__()
 
 # Allocates subnets for the links
-class NetAllocator(object):
+class IPv6NetAllocator(object):
 
   bit = 16
   net = unicode("fdf0::/%s" % bit)
@@ -68,20 +68,35 @@ class NetAllocator(object):
   
   def __init__(self):
     print "*** Calculating Available IP Networks"
-    self.ipv6net = (IPv6Network(self.net)).subnets(new_prefix=NetAllocator.prefix)
-  
+    self.ipv6net = (IPv6Network(self.net)).subnets(new_prefix=IPv6NetAllocator.prefix)
+
   def nextNetAddress(self):
     n_net = next(self.ipv6net)
     return n_net
 
+# Allocates subnets for the links
+class IPv4NetAllocator(object):
+
+  bit = 8
+  net = unicode("10.0.0.0/%s" % bit)
+  prefix = 16
+
+  def __init__(self):
+    print "*** Calculating Available IPv4 Networks"
+    self.ipv4net = (IPv4Network(self.net)).subnets(new_prefix=IPv4NetAllocator.prefix)
+
+  def nextNetAddress(self):
+    n_net = next(self.ipv4net)
+    return n_net
+
 # Generator of 
-class PropertiesGenerator(object):
+class IPv6PropertiesGenerator(object):
 
   def __init__(self):
     self.verbose = False
     self.loopbackAllocator = LoopbackAllocator()
     self.routerIdAllocator = RouterIdAllocator()
-    self.netAllocator = NetAllocator()
+    self.netAllocator = IPv6NetAllocator()
     self.allocated = 1
 
   # Generater for router properties
@@ -98,11 +113,107 @@ class PropertiesGenerator(object):
       output.append(routerproperties)
     return output
 
-  # Generator for link properties  
-  def getLinksProperties(self, links):
+  # Generator for link properties
+  def getCoreLinksProperties(self, links):
     output = []
     net = self.netAllocator.nextNetAddress()
     
+    if self.verbose == True:
+      print net
+    hosts = net.hosts()
+
+    for link in links:
+      if self.verbose == True:
+        print "(%s,%s)" % (link[0], link[1])
+
+      iplhs = next(hosts).__str__()
+      iprhs = next(hosts).__str__()
+      ospf6net = net.__str__()
+
+      linkproperties = LinkProperties(iplhs, iprhs, ospf6net)
+      if self.verbose == True:
+        print linkproperties
+      output.append(linkproperties)
+    return output
+
+
+  # Generator for link properties
+  def getEdgeLinksProperties(self, links):
+    output = []
+    net = self.netAllocator.nextNetAddress()
+
+    if self.verbose == True:
+      print net
+    hosts = net.hosts()
+
+    for link in links:
+      if self.verbose == True:
+        print "(%s,%s)" % (link[0], link[1])
+
+      iplhs = next(hosts).__str__()
+      iprhs = next(hosts).__str__()
+      ospf6net = net.__str__()
+
+      linkproperties = LinkProperties(iplhs, iprhs, ospf6net)
+      if self.verbose == True:
+        print linkproperties
+      output.append(linkproperties)
+    return output
+
+
+# Generator of
+class IPv4PropertiesGenerator(object):
+
+  def __init__(self):
+    self.verbose = False
+    self.loopbackAllocator = LoopbackAllocator()
+    self.routerIdAllocator = RouterIdAllocator()
+    self.ipv6NetAllocator = IPv6NetAllocator()
+    self.ipv4NetAllocator = IPv4NetAllocator()
+    self.allocated = 1
+
+  # Generater for router properties
+  def getRoutersProperties(self, nodes):
+    output = []
+    for node in nodes:
+      if self.verbose == True:
+        print node
+      loopback = self.loopbackAllocator.nextLoopbackAddress()
+      routerid = self.routerIdAllocator.nextRouterId()
+      routerproperties = RouterProperties(loopback, routerid)
+      if self.verbose == True:
+        print routerproperties
+      output.append(routerproperties)
+    return output
+
+  # Generator for link properties
+  def getCoreLinksProperties(self, links):
+    output = []
+    net = self.ipv6NetAllocator.nextNetAddress()
+
+    if self.verbose == True:
+      print net
+    hosts = net.hosts()
+
+    for link in links:
+      if self.verbose == True:
+        print "(%s,%s)" % (link[0], link[1])
+
+      iplhs = next(hosts).__str__()
+      iprhs = next(hosts).__str__()
+      ospf6net = net.__str__()
+
+      linkproperties = LinkProperties(iplhs, iprhs, ospf6net)
+      if self.verbose == True:
+        print linkproperties
+      output.append(linkproperties)
+    return output
+
+  # Generator for link properties
+  def getEdgeLinksProperties(self, links):
+    output = []
+    net = self.ipv4NetAllocator.nextNetAddress()
+
     if self.verbose == True:    
       print net
     hosts = net.hosts()
@@ -116,7 +227,7 @@ class PropertiesGenerator(object):
       ospf6net = net.__str__()
 
       linkproperties = LinkProperties(iplhs, iprhs, ospf6net)
-      if self.verbose == True:      
+      if self.verbose == True:
         print linkproperties
       output.append(linkproperties)
     return output
