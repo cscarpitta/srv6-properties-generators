@@ -89,80 +89,8 @@ class IPv4NetAllocator(object):
     n_net = next(self.ipv4net)
     return n_net
 
-# Generator of 
-class IPv6PropertiesGenerator(object):
-
-  def __init__(self):
-    self.verbose = False
-    self.loopbackAllocator = LoopbackAllocator()
-    self.routerIdAllocator = RouterIdAllocator()
-    self.netAllocator = IPv6NetAllocator()
-    self.allocated = 1
-
-  # Generater for router properties
-  def getRoutersProperties(self, nodes):
-    output = []
-    for node in nodes:
-      if self.verbose == True:
-        print node
-      loopback = self.loopbackAllocator.nextLoopbackAddress()
-      routerid = self.routerIdAllocator.nextRouterId()
-      routerproperties = RouterProperties(loopback, routerid)
-      if self.verbose == True:
-        print routerproperties
-      output.append(routerproperties)
-    return output
-
-  # Generator for link properties
-  def getCoreLinksProperties(self, links):
-    output = []
-    net = self.netAllocator.nextNetAddress()
-    
-    if self.verbose == True:
-      print net
-    hosts = net.hosts()
-
-    for link in links:
-      if self.verbose == True:
-        print "(%s,%s)" % (link[0], link[1])
-
-      iplhs = next(hosts).__str__()
-      iprhs = next(hosts).__str__()
-      ospf6net = net.__str__()
-
-      linkproperties = LinkProperties(iplhs, iprhs, ospf6net)
-      if self.verbose == True:
-        print linkproperties
-      output.append(linkproperties)
-    return output
-
-
-  # Generator for link properties
-  def getEdgeLinksProperties(self, links):
-    output = []
-    net = self.netAllocator.nextNetAddress()
-
-    if self.verbose == True:
-      print net
-    hosts = net.hosts()
-
-    for link in links:
-      if self.verbose == True:
-        print "(%s,%s)" % (link[0], link[1])
-
-      iplhs = next(hosts).__str__()
-      iprhs = next(hosts).__str__()
-      ospf6net = net.__str__()
-
-      linkproperties = LinkProperties(iplhs, iprhs, ospf6net)
-      if self.verbose == True:
-        print linkproperties
-      output.append(linkproperties)
-    return output
-
-
 # Generator of
-class IPv4PropertiesGenerator(object):
+class PropertiesGenerator(object):
 
   def __init__(self):
     self.verbose = False
@@ -187,7 +115,7 @@ class IPv4PropertiesGenerator(object):
     return output
 
   # Generator for link properties
-  def getCoreLinksProperties(self, links):
+  def getIPv6LinksProperties(self, links):
     output = []
     net = self.ipv6NetAllocator.nextNetAddress()
 
@@ -210,7 +138,7 @@ class IPv4PropertiesGenerator(object):
     return output
 
   # Generator for link properties
-  def getEdgeLinksProperties(self, links):
+  def getIPv4LinksProperties(self, links):
     output = []
     net = self.ipv4NetAllocator.nextNetAddress()
 
