@@ -23,139 +23,407 @@
 # @author Pier Luigi Ventre <pierventre@hotmail.com>
 # @author Stefano Salsano <stefano.salsano@uniroma2.it>
 
-from ipaddress import IPv6Network, IPv4Network
+from ipaddress import IPv6Network, IPv4Network, IPv6Address, IPv6Interface, IPv4Address
 
 from srv6_properties import *
 
-RANGE_FOR_AREA_0="fd00::/8"
+RANGE_FOR_AREA_0="fc00::/8"
+
+# Customer's networks: fd00::/8
+# Operator’s networks and SIDs: fc00::/8
+
+# fcff::/16 is the address space for router loopbacks,
+# other addresses (SIDs) internal to the router,
+# datacenters connected to the router
+
+bit = 16
+net = "fcff::/%d" % bit
+
+
+class SIDAllocator(object):
+
+    # Address space for SIDs: fcff:xxxx:2:0/64
+    # (e.g. fcff:xxxx:0002:0000:0000:0002:0000:tttt)
+    # where 'xxxx' is the router id and tttt the vpn id
+
+    prefix = 64
+
+    def getSID(self, router_id, vpn_id):
+        # Generate the SID
+        prefix = int(IPv6Interface(net).ip)
+        router_id = int(IPv4Address(router_id))
+        sid = IPv6Network(prefix | router_id << 96 | 2 << 80 | vpn_id)
+        # Remove /128 mask and convert to string
+        sid = IPv6Interface(sid).ip.__str__()
+        # Return the SID
+        return sid
+
+    def getSIDFamily(self, router_id):
+        # Generate the SID
+        prefix = int(IPv6Interface(net).ip)
+        router_id = int(IPv4Address(router_id))
+        sidFamily = IPv6Network(prefix | router_id << 96 | 2 << 80)
+        # Append prefix /64
+        sidFamily = sidFamily.supernet(new_prefix=SIDAllocator.prefix)
+        # Convert to string
+        sidFamily = IPv6Interface(sidFamily).__str__()
+        # Return the SID
+        return sidFamily
+
 
 # Allocates loopbacks
 class LoopbackAllocator(object):
 
-  bit = 16
-  net = unicode("fdff::/%d" % bit)
-  prefix = 56
+  # Loopback address space for the router xxxx
+  # fcff:xxxx:0:0::/64
 
-  def __init__(self): 
-    print "*** Calculating Available Loopback Addresses"
-    self.loopbacknet = (IPv6Network(self.net)).subnets(new_prefix=LoopbackAllocator.prefix)
+  prefix = 64
 
-  def nextLoopbackAddress(self):
-    n_net = next(self.loopbacknet)
-    n_host = next(n_net.hosts())
-    return n_host.__str__()
+  def getLoopbackAddress(self, router_index):
+    # Generate the loopback address
+    prefix = int(IPv6Interface(net).ip)
+    loopbackip = IPv6Network(prefix | router_index << 96 | 1)
+    # Remove /128 mask and convert to string
+    loopbackip = IPv6Interface(loopbackip).ip.__str__()
+    # Return the address
+    return loopbackip.__str__()
+
+
+# Allocates router networks
+class RouterNetAllocator(object):
+
+  # Each router exports a /32
+  # fcff:xxxx::/32
+
+  prefix = 32
+
+  def getRouterNet(self, router_index):
+      # Generate the router net
+      prefix = int(IPv6Interface(net).ip)
+      routernet = IPv6Network(prefix | router_index << 96)
+      # Append prefix /32
+      routernet = routernet.supernet(new_prefix=RouterNetAllocator.prefix)
+      # Convert to string
+      routernet = IPv6Interface(routernet).__str__()
+      # Return the net
+      return routernet
+
 
 # Allocates router ids
 class RouterIdAllocator(object):
 
-  bit = 0
-  _id = unicode("0.0.0.0/%d" % bit)
+  # Router IDs start from 0.0.0.1
 
-  def __init__(self): 
-    print "*** Calculating Available Router Ids"
-    self.router_id = (IPv4Network(self._id)).hosts()
+  def getRouterId(self, router_index):
+    # Generate the router id
+    router_id = IPv4Address(router_index)
+    # Return the address
+    return router_id.__str__()
 
-  def nextRouterId(self):
-    n_id = next(self.router_id)
-    return n_id.__str__()
 
-# Allocates subnets for the links
-class IPv6NetAllocator(object):
+class NetAllocator(object):
 
-  bit = 16
-  net = unicode("fdf0::/%s" % bit)
+    # fcf0::/16 address space for the links in the operators network
+
+    # Link between router xxxx and yyyy
+    # fcf0:0000:xxxx:yyyy::/64
+    # The first two IPv6 addresses of the dataplane subnet
+    #  are assigned to the two sides of the link
+    # fcf0:0000:xxxx:yyyy::1/64 address of router xxxx
+    # fcf0:0000:xxxx:yyyy::2/64 address of router yyyy
+
+    bit = 16
+    net = "fcf0::/%s" % bit
+    prefix = 64
+
+    def getNet(self, l_router_index, r_router_index):
+        # Generate the operator net
+        prefix = int(IPv6Interface(NetAllocator.net).ip)
+        operatorNet = IPv6Network(prefix | l_router_index << 80 | r_router_index << 64)
+        # Append prefix to the net
+        operatorNet = operatorNet.supernet(new_prefix=NetAllocator.prefix)
+        # Return the net
+        return operatorNet
+
+    def getLRouterAddress(self, l_router_index, r_router_index):
+        # Generate the left router address
+        prefix = int(IPv6Interface(NetAllocator.net).ip)
+        lRouterAddress = IPv6Network(prefix | l_router_index << 80 | r_router_index << 64 | 1)
+        # Remove /128 mask from the address and convert to string
+        lRouterAddress = IPv6Interface(lRouterAddress).ip.__str__()
+        # Return the address
+        return lRouterAddress
+
+    def getRRouterAddress(self, l_router_index, r_router_index):
+        # Generate the right router address
+        prefix = int(IPv6Interface(NetAllocator.net).ip)
+        rRouterAddress = IPv6Network(prefix | l_router_index << 80 | r_router_index << 64 | 2)
+        # Remove /128 mask from the address and convert to string
+        rRouterAddress = IPv6Interface(rRouterAddress).ip.__str__()
+        # Return the address
+        return rRouterAddress
+
+
+class CustomerFacingNetAllocator(object):
+
+    # fcff:xxxx:3::/48 customer facing subnets
+
+    # Link between router xxxx and host yyyy
+    # fcff:xxxx:3:yy00:/56
+    # The first two IPv6 addresses of the dataplane subnet
+    #  are assigned to the two sides of the link
+    # fcff:xxxx:3:yy00::1/64 address of router xxxx
+    # fcff:xxxx:3:yy00::2/64 address of host yy
+
+    bit = 48
+    net = "fcff::/%s" % bit
+    prefix = 64
+
+    def getNet(self, router_index, host_index):
+        # Generate the operator net
+        prefix = int(IPv6Interface(CustomerFacingNetAllocator.net).ip)
+        operatorNet = IPv6Network(prefix | router_index << 96 | 3 << 80 | host_index << 64)
+        # Append prefix to the net
+        operatorNet = operatorNet.supernet(new_prefix=CustomerFacingNetAllocator.prefix)
+        # Return the net
+        return operatorNet
+
+    def getRouterAddress(self, router_index, host_index):
+        # Generate the router address
+        prefix = int(IPv6Interface(CustomerFacingNetAllocator.net).ip)
+        routerAddress = IPv6Network(prefix | router_index << 96 | 3 << 80 | host_index << 64 | 1)
+        # Remove /128 mask from the address and convert to string
+        routerAddress = IPv6Interface(routerAddress).ip.__str__()
+        # Return the address
+        return routerAddress
+
+    def getHostAddress(self, router_index, host_index):
+        # Generate the host address
+        prefix = int(IPv6Interface(CustomerFacingNetAllocator.net).ip)
+        hostAddress = IPv6Network(prefix | router_index << 96 | 3 << 80 | host_index << 64 | 2)
+        # Remove /128 mask from the address and convert to string
+        hostAddress = IPv6Interface(hostAddress).ip.__str__()
+        # Return the address
+        return hostAddress
+
+
+class IPv6CustomerNetAllocator(object):
+
+  # fd00::/8 customers’ networks
+  # e.g. fd00:x:y::/48 is a network
+  # connecting host y for the customer VPN x
+  # fd00:x:y::1 address of the PE router
+  # fd00:x:y::2 address of the host
+
+    bit = 8
+    net = "fd00::/%s" % bit
+    prefix = 48
+
+    def getNet(self, vpn_id, host_id):
+        # Generate the customer net
+        prefix = int(IPv6Interface(IPv6CustomerNetAllocator.net).ip)
+        customerNet = IPv6Network(prefix | vpn_id << 96 | host_id << 80)
+        # Append prefix to the net
+        customerNet = customerNet.supernet(new_prefix=IPv6CustomerNetAllocator.prefix)
+        # Return the net
+        return customerNet
+
+    def getRouterAddress(self, vpn_id, host_id):
+        # Generate the router address
+        prefix = int(IPv6Interface(IPv6CustomerNetAllocator.net).ip)
+        routerAddress = IPv6Network(prefix | vpn_id << 96 | host_id << 80 | 1)
+        # Remove /128 mask from the address and convert to string
+        routerAddress = IPv6Interface(routerAddress).ip.__str__()
+        #routerAddress = "%s/%s" % (routerAddress, IPv6CustomerNetAllocator.prefix)
+        # Return the address
+        return routerAddress
+
+    def getHostAddress(self, vpn_id, host_id):
+        # Generate the host address
+        prefix = int(IPv6Interface(IPv6CustomerNetAllocator.net).ip)
+        hostAddress = IPv6Network(prefix | vpn_id << 96 | host_id << 80 | 2)
+        # Remove /128 mask from the address and convert to string
+        hostAddress = IPv6Interface(hostAddress).ip.__str__()
+        #hostAddress = "%s/%s" % (hostAddress, IPv6CustomerNetAllocator.prefix)
+        # Return the address
+        return hostAddress
+
+
+class IPv4CustomerNetAllocator(object):
+
+    # 10.0.0.0/8 customers’ networks
+    # e.g. 10.x.y.0/24 is a network
+    # connecting host y for the customer VPN x
+    # 10.x.y.1 address of the PE router
+    # 10.x.y.2 address of the host
+
+    bit = 8
+    net = "10.0.0.0/%s" % bit
+    prefix = 24
+
+    def getNet(self, vpn_id, host_id):
+        # Generate the customer net
+        prefix = int(IPv4Interface(IPv4CustomerNetAllocator.net).ip)
+        customerNet = IPv4Network(prefix | vpn_id << 16 | host_id << 8)
+        # Append prefix to the net
+        customerNet = customerNet.supernet(new_prefix=IPv4CustomerNetAllocator.prefix)
+        # Return the net
+        return customerNet
+
+    def getRouterAddress(self, vpn_id, host_id):
+        # Generate the router address
+        prefix = int(IPv4Interface(IPv4CustomerNetAllocator.net).ip)
+        routerAddress = IPv4Network(prefix | vpn_id << 16 | host_id << 8 | 1)
+        # Remove /128 mask from the address and convert to string
+        routerAddress = IPv4Interface(routerAddress).ip.__str__()
+        # Return the address
+        return routerAddress
+
+    def getHostAddress(self, vpn_id, host_id):
+        # Generate the host address
+        prefix = int(IPv4Interface(IPv4CustomerNetAllocator.net).ip)
+        hostAddress = IPv4Network(prefix | vpn_id << 16 | host_id << 8 | 2)
+        # Remove /128 mask from the address and convert to string
+        hostAddress = IPv4Interface(hostAddress).ip.__str__()
+        # Return the address
+        return hostAddress
+
+
+# Allocates mgmt address
+class MgmtAllocator(object):
+
+  bit = 64
+  net = "2000::/%d" % bit
   prefix = 64
-  
-  def __init__(self):
-    print "*** Calculating Available IP Networks"
-    self.ipv6net = (IPv6Network(self.net)).subnets(new_prefix=IPv6NetAllocator.prefix)
 
-  def nextNetAddress(self):
-    n_net = next(self.ipv6net)
-    return n_net
+  def getMgmtAddress(self, node_index):
+        # Generate the mgmt address
+        prefix = int(IPv6Interface(MgmtAllocator.net).ip)
+        mgmtAddress = IPv6Network(prefix | node_index)
+        # Remove /128 mask from the address and convert to string
+        mgmtAddress = IPv6Interface(mgmtAddress).ip.__str__()
+        # Return the address
+        return mgmtAddress
 
-# Allocates subnets for the links
-class IPv4NetAllocator(object):
-
-  bit = 8
-  net = unicode("10.0.0.0/%s" % bit)
-  prefix = 16
-
-  def __init__(self):
-    print "*** Calculating Available IPv4 Networks"
-    self.ipv4net = (IPv4Network(self.net)).subnets(new_prefix=IPv4NetAllocator.prefix)
-
-  def nextNetAddress(self):
-    n_net = next(self.ipv4net)
-    return n_net
 
 # Generator of
 class PropertiesGenerator(object):
 
   def __init__(self):
     self.verbose = False
+    self.index = 0
     self.loopbackAllocator = LoopbackAllocator()
     self.routerIdAllocator = RouterIdAllocator()
-    self.ipv6NetAllocator = IPv6NetAllocator()
-    self.ipv4NetAllocator = IPv4NetAllocator()
+    self.netAllocator = NetAllocator()
+    self.customerFacingNetAllocator = CustomerFacingNetAllocator()
+    self.routerNetAllocator = RouterNetAllocator()
+    self.mgmtAllocator = MgmtAllocator()
     self.allocated = 1
+    self.router_to_index = dict()
+    self.host_to_index = dict()
+    self.controller_to_index = dict()
 
   # Generater for router properties
   def getRoutersProperties(self, nodes):
     output = []
     for node in nodes:
       if self.verbose == True:
-        print node
-      loopback = self.loopbackAllocator.nextLoopbackAddress()
-      routerid = self.routerIdAllocator.nextRouterId()
-      routerproperties = RouterProperties(loopback, routerid)
+        print(node)
+      self.index += 1
+      loopback = self.loopbackAllocator.getLoopbackAddress(self.index)
+      routerid = self.routerIdAllocator.getRouterId(self.index)
+      routernet = self.routerNetAllocator.getRouterNet(self.index)
+      mgmtip = self.mgmtAllocator.getMgmtAddress(self.index)
+      routerproperties = RouterProperties(loopback, routerid, routernet, mgmtip, self.index)
+      self.router_to_index[node] = self.index
       if self.verbose == True:
-        print routerproperties
+        print(routerproperties)
       output.append(routerproperties)
     return output
 
-  # Generator for link properties
-  def getIPv6LinksProperties(self, links):
+  # Generater for router properties
+  def getHostsProperties(self, nodes):
     output = []
-    net = self.ipv6NetAllocator.nextNetAddress()
+    for node in nodes:
+      if self.verbose == True:
+        print(node)
+      self.index += 1
+      mgmtip = self.mgmtAllocator.getMgmtAddress(self.index)
+      hostproperties = HostProperties(mgmtip, self.index)
+      self.host_to_index[node] = self.index
+      if self.verbose == True:
+        print(hostproperties)
+      output.append(hostproperties)
+    return output
+
+  # Generator for link properties
+  def getCoreLinksProperties(self, links):
+    output = []
 
     if self.verbose == True:
-      print net
-    hosts = net.hosts()
+      print(net)
 
     for link in links:
       if self.verbose == True:
-        print "(%s,%s)" % (link[0], link[1])
+        print("(%s,%s)" % (link[0], link[1]))
 
-      iplhs = next(hosts).__str__()
-      iprhs = next(hosts).__str__()
-      ospf6net = net.__str__()
+      _lrouter = self.router_to_index[link[0]]
+      _rrouter = self.router_to_index[link[1]]
+
+      _net = self.netAllocator.getNet(_lrouter, _rrouter)
+      l_router = self.netAllocator.getLRouterAddress(_lrouter, _rrouter)
+      r_router = self.netAllocator.getRRouterAddress(_lrouter, _rrouter)
+
+      iplhs = l_router.__str__()
+      iprhs = r_router.__str__()
+      ospf6net = _net.__str__()
 
       linkproperties = LinkProperties(iplhs, iprhs, ospf6net)
       if self.verbose == True:
-        print linkproperties
+        print(linkproperties)
       output.append(linkproperties)
     return output
 
   # Generator for link properties
-  def getIPv4LinksProperties(self, links):
+  def getEdgeLinksProperties(self, links):
     output = []
-    net = self.ipv4NetAllocator.nextNetAddress()
 
-    if self.verbose == True:    
-      print net
-    hosts = net.hosts()
+    if self.verbose == True:
+      print(net)
 
     for link in links:
-      if self.verbose == True:    
-        print "(%s,%s)" % (link[0], link[1])
-        
-      iplhs = next(hosts).__str__()
-      iprhs = next(hosts).__str__()
-      ospf6net = net.__str__()
+      if self.verbose == True:
+        print("(%s,%s)" % (link[0], link[1]))
+
+      if self.router_to_index.get(link[0]):
+        # Left node of the link is the router
+        # Right node of the link is the host
+        _lnode = self.router_to_index.get(link[0])
+        _rnode = self.host_to_index.get(link[1])
+        _net = self.customerFacingNetAllocator.getNet(_lnode, _rnode)
+        l_node = self.customerFacingNetAllocator.getRouterAddress(_lnode, _rnode)
+        r_node = self.customerFacingNetAllocator.getHostAddress(_lnode, _rnode)
+      else:
+        # Left node of the link is the host
+        # Right node of the link is the router
+        _lnode = self.host_to_index.get(link[0])
+        _rnode = self.router_to_index.get(link[1])
+        _net = self.customerFacingNetAllocator.getNet(_rnode, _lnode)
+        r_node = self.customerFacingNetAllocator.getRouterAddress(_rnode, _lnode)
+        l_node = self.customerFacingNetAllocator.getHostAddress(_rnode, _lnode)
+
+      iplhs = l_node.__str__()
+      iprhs = r_node.__str__()
+      ospf6net = _net.__str__()
 
       linkproperties = LinkProperties(iplhs, iprhs, ospf6net)
       if self.verbose == True:
-        print linkproperties
+        print(linkproperties)
       output.append(linkproperties)
     return output
+
+  # Generator for mgmt station address
+  def nextMgmtAddress(self):
+    self.index += 1
+    mgmtip = self.mgmtAllocator.getMgmtAddress(self.index)
+    return mgmtip
