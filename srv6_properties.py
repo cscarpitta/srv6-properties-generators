@@ -43,6 +43,20 @@ class OSPFNetwork(object):
   def __str__(self):
     return "{'name':'%s', 'net':'%s', 'area':'%s'}" %(self.name, self.net, self.area)
 
+'''
+ # Encapsulate controller properties
+class ControllerProperties(object):
+  
+  def __init__(self, loopback, mgmtip, index):
+    self.loopback = loopback
+    self.mgmtip = mgmtip
+    self.index = index
+
+  def __str__(self):
+    return "{'loopback':'%s/64', 'mgmtip': '%s'}" %(self.loopback, self.mgmtip)
+'''
+
+
  # Encapsulate router properties
 class RouterProperties(object):
   
@@ -59,14 +73,16 @@ class RouterProperties(object):
  # Encapsulate router properties
 class HostProperties(object):
 
-  def __init__(self, mgmtip, index):
+  def __init__(self, loopback, mgmtip, index):
+    self.loopback = loopback
     self.mgmtip = mgmtip
     self.index = index
 
   def __str__(self):
-    return "{'mgmtip':'%s'}" %(self.mgmtip)
+    return "{'loopback':'%s/64', 'mgmtip':'%s'}" %(self.loopback, self.mgmtip)
 
- # Encapsulate router properties
+'''
+# Encapsulate router properties
 class ControllerProperties(object):
 
   def __init__(self, routerid, mgmtip, index):
@@ -76,14 +92,16 @@ class ControllerProperties(object):
 
   def __str__(self):
     return "{'routerid': '%s', 'mgmtip': '%s'}" %(self.routerid, self.mgmtip)
+'''
 
 # Encapsulate link properties used to build the testbed object in softfire-tiesr-deployer
 class LinkProperties(object):
 
-  def __init__(self, iplhs, iprhs, net):
+  def __init__(self, iplhs, iprhs, net, prefix):
     self.iplhs = iplhs
     self.iprhs = iprhs
     self.net = net
+    self.prefix = prefix
 
   def __str__(self):
     return "{'iplhs':'%s', 'iprhs':'%s', net':'%s'}" %(self.iplhs, self.iprhs, self.net)
