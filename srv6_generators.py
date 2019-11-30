@@ -23,11 +23,17 @@
 # @author Pier Luigi Ventre <pierventre@hotmail.com>
 # @author Stefano Salsano <stefano.salsano@uniroma2.it>
 
-from ipaddress import IPv6Network, IPv4Network, IPv6Interface, IPv4Interface, IPv4Address
+from __future__ import print_function
+
+from ipaddress import IPv6Network
+from ipaddress import IPv4Network
+from ipaddress import IPv6Interface
+from ipaddress import IPv4Interface
+from ipaddress import IPv4Address
 
 from srv6_properties import *
 
-RANGE_FOR_AREA_0="fc00::/8"
+RANGE_FOR_AREA_0=u"fc00::/8"
 
 # Customer's networks: fd00::/8
 # Operator’s networks and SIDs: fc00::/8
@@ -37,7 +43,7 @@ RANGE_FOR_AREA_0="fc00::/8"
 # datacenters connected to the router
 
 bit = 16
-net = unicode("fcff::/%d" % bit)
+net = u"fcff::/%d" % bit
 
 
 class SIDAllocator(object):
@@ -49,8 +55,6 @@ class SIDAllocator(object):
     prefix = 64
 
     def getSID(self, router_id, vpn_id):
-        # Convert str to unicode
-        router_id = unicode(router_id)
         # Generate the SID
         prefix = int(IPv6Interface(net).ip)
         router_id = int(IPv4Address(router_id))
@@ -61,8 +65,6 @@ class SIDAllocator(object):
         return sid
 
     def getSIDFamily(self, router_id):
-        # Convert str to unicode
-        router_id = unicode(router_id)
         # Generate the SID
         prefix = int(IPv6Interface(net).ip)
         router_id = int(IPv4Address(router_id))
@@ -137,7 +139,7 @@ class IPv6NetAllocator(object):
     # fcf0:0000:xxxx:yyyy::2/64 address of router yyyy
 
     bit = 16
-    net = unicode("fcf0::/%s" % bit)
+    net = u"fcf0::/%s" % bit
     prefix = 64
 
     def getNet(self, l_router_index, r_router_index):
@@ -180,7 +182,7 @@ class IPv4NetAllocator(object):
     # fcf0:0000:xxxx:yyyy::2/64 address of router yyyy
 
     bit = 8
-    net = unicode("11.0.0.0/%s" % bit)
+    net = u"11.0.0.0/%s" % bit
     prefix = 30
 
     def getNet(self, l_router_index, r_router_index):
@@ -223,7 +225,7 @@ class IPv6CustomerFacingNetAllocator(object):
     # fcff:xxxx:3:yy00::2/64 address of host yy
 
     bit = 48
-    net = unicode("fcff::/%s" % bit)
+    net = u"fcff::/%s" % bit
     prefix = 64
 
     def getNet(self, router_index, host_index):
@@ -266,7 +268,7 @@ class IPv4CustomerFacingNetAllocator(object):
     # fcff:xxxx:3:yy00::2/64 address of host yy
 
     bit = 16
-    net = unicode("192.168.0.0/%s" % bit)
+    net = u"192.168.0.0/%s" % bit
     prefix = 24
 
     def getNet(self, router_index, host_index):
@@ -309,7 +311,7 @@ class IPv6AccessNetAllocator(object):
     # fcff:xxxx:3:yy00::2/64 address of host yy
 
     bit = 48
-    net = unicode("fcfb::/%s" % bit)
+    net = u"fcfb::/%s" % bit
     prefix = 64
 
     def getNet(self, router_index, host_index):
@@ -352,7 +354,7 @@ class IPv4AccessNetAllocator(object):
     # fcff:xxxx:3:yy00::2/64 address of host yy
 
     bit = 16
-    net = unicode("10.0.0.0/%s" % bit)
+    net = u"10.0.0.0/%s" % bit
     prefix = 30
 
     def getNet(self, router_index, host_index):
@@ -392,7 +394,7 @@ class IPv6CustomerNetAllocator(object):
   # fd00:x:y::2 address of the host
 
     bit = 8
-    net = unicode("fd00::/%s" % bit)
+    net = u"fd00::/%s" % bit
     prefix = 48
 
     def getNet(self, vpn_id, host_id):
@@ -434,7 +436,7 @@ class IPv4CustomerNetAllocator(object):
     # 10.x.y.2 address of the host
 
     bit = 8
-    net = unicode("10.0.0.0/%s" % bit)
+    net = u"10.0.0.0/%s" % bit
     prefix = 30
 
     def getNet(self, vpn_id, host_id):
@@ -469,7 +471,7 @@ class IPv4CustomerNetAllocator(object):
 class IPv6MgmtAllocator(object):
 
     bit = 16
-    net = unicode("2000::/%d" % bit)
+    net = u"2000::/%d" % bit
     prefix = 64
 
     def getNet(self, controller_index, router_index):
@@ -504,7 +506,7 @@ class IPv6MgmtAllocator(object):
 class IPv4MgmtAllocator(object):
 
     bit = 12
-    net = unicode("172.0.0.0/%d" % bit)
+    net = u"172.0.0.0/%d" % bit
     prefix = 30
 
     def getNet(self, controller_index, router_index):

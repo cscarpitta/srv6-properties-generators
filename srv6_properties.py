@@ -23,6 +23,8 @@
 # @author Pier Luigi Ventre <pierventre@hotmail.com>
 # @author Stefano Salsano <stefano.salsano@uniroma2.it>
 
+from __future__ import print_function
+
 # Store an OSPF network
 class OSPFNetwork(object):
  
