@@ -31,7 +31,9 @@ from ipaddress import IPv6Interface
 from ipaddress import IPv4Interface
 from ipaddress import IPv4Address
 
-from srv6_properties import *
+from srv6_properties import RouterProperties
+from srv6_properties import HostProperties
+from srv6_properties import LinkProperties
 
 RANGE_FOR_AREA_0=u"fc00::/8"
 
@@ -628,22 +630,11 @@ class IPv6PropertiesGenerator(object):
       if self.verbose == True:
         print("(%s,%s)" % (link[0], link[1]))
 
-      if self.node_to_index.get(link[0]) is not None:
-        # Left node of the link is the router
-        # Right node of the link is the host
-        _lnode = self.node_to_index.get(link[0])
-        _rnode = self.node_to_index.get(link[1])
-        _net = self.customerFacingNetAllocator.getNet(_lnode, _rnode)
-        l_node = self.customerFacingNetAllocator.getRouterAddress(_lnode, _rnode)
-        r_node = self.customerFacingNetAllocator.getHostAddress(_lnode, _rnode)
-      else:
-        # Left node of the link is the host
-        # Right node of the link is the router
-        _lnode = self.host_to_index.get(link[0])
-        _rnode = self.router_to_index.get(link[1])
-        _net = self.customerFacingNetAllocator.getNet(_rnode, _lnode)
-        r_node = self.customerFacingNetAllocator.getRouterAddress(_rnode, _lnode)
-        l_node = self.customerFacingNetAllocator.getHostAddress(_rnode, _lnode)
+      _lnode = self.node_to_index.get(link[0])
+      _rnode = self.node_to_index.get(link[1])
+      _net = self.customerFacingNetAllocator.getNet(_lnode, _rnode)
+      l_node = self.customerFacingNetAllocator.getRouterAddress(_lnode, _rnode)
+      r_node = self.customerFacingNetAllocator.getHostAddress(_lnode, _rnode)
 
       iplhs = l_node.__str__()
       iprhs = r_node.__str__()
@@ -659,29 +650,15 @@ class IPv6PropertiesGenerator(object):
   def getAccessLinksProperties(self, links):
     output = []
 
-    if self.verbose == True:
-      print(net)
-
     for link in links:
       if self.verbose == True:
         print("(%s,%s)" % (link[0], link[1]))
 
-      if self.node_to_index.get(link[0]) is not None:
-        # Left node of the link is the router
-        # Right node of the link is the host
-        _lnode = self.node_to_index.get(link[0])
-        _rnode = self.node_to_index.get(link[1])
-        _net = self.accessNetAllocator.getNet(_lnode, _rnode)
-        l_node = self.accessNetAllocator.getRouterAddress(_lnode, _rnode)
-        r_node = self.accessNetAllocator.getHostAddress(_lnode, _rnode)
-      else:
-        # Left node of the link is the host
-        # Right node of the link is the router
-        _lnode = self.host_to_index.get(link[0])
-        _rnode = self.router_to_index.get(link[1])
-        _net = self.accessNetAllocator.getNet(_rnode, _lnode)
-        r_node = self.accessNetAllocator.getRouterAddress(_rnode, _lnode)
-        l_node = self.accessNetAllocator.getHostAddress(_rnode, _lnode)
+      _lnode = self.node_to_index.get(link[0])
+      _rnode = self.node_to_index.get(link[1])
+      _net = self.accessNetAllocator.getNet(_lnode, _rnode)
+      l_node = self.accessNetAllocator.getRouterAddress(_lnode, _rnode)
+      r_node = self.accessNetAllocator.getHostAddress(_lnode, _rnode)
 
       iplhs = l_node.__str__()
       iprhs = r_node.__str__()
@@ -697,29 +674,15 @@ class IPv6PropertiesGenerator(object):
   def getMgmtLinksProperties(self, links):
     output = []
 
-    if self.verbose == True:
-      print(net)
-
     for link in links:
       if self.verbose == True:
         print("(%s,%s)" % (link[0], link[1]))
 
-      if self.node_to_index.get(link[0]) is not None:
-        # Left node of the link is the router
-        # Right node of the link is the host
-        _lnode = self.node_to_index.get(link[0])
-        _rnode = self.node_to_index.get(link[1])
-        _net = self.mgmtNetAllocator.getNet(_lnode, _rnode)
-        l_node = self.mgmtNetAllocator.getControllerAddress(_lnode, _rnode)
-        r_node = self.mgmtNetAllocator.getRouterAddress(_lnode, _rnode)
-      else:
-        # Left node of the link is the host
-        # Right node of the link is the router
-        _lnode = self.host_to_index.get(link[0])
-        _rnode = self.router_to_index.get(link[1])
-        _net = self.mgmtNetAllocator.getNet(_rnode, _lnode)
-        r_node = self.mgmtNetAllocator.getRouterAddress(_rnode, _lnode)
-        l_node = self.mgmtNetAllocator.getHostAddress(_rnode, _lnode)
+      _lnode = self.node_to_index.get(link[0])
+      _rnode = self.node_to_index.get(link[1])
+      _net = self.mgmtNetAllocator.getNet(_lnode, _rnode)
+      l_node = self.mgmtNetAllocator.getControllerAddress(_lnode, _rnode)
+      r_node = self.mgmtNetAllocator.getRouterAddress(_lnode, _rnode)
 
       iplhs = l_node.__str__()
       iprhs = r_node.__str__()
@@ -794,9 +757,6 @@ class IPv4PropertiesGenerator(object):
   def getCoreLinksProperties(self, links):
     output = []
 
-    if self.verbose == True:
-      print(net)
-
     for link in links:
       if self.verbose == True:
         print("(%s,%s)" % (link[0], link[1]))
@@ -822,29 +782,15 @@ class IPv4PropertiesGenerator(object):
   def getEdgeLinksProperties(self, links):
     output = []
 
-    if self.verbose == True:
-      print(net)
-
     for link in links:
       if self.verbose == True:
         print("(%s,%s)" % (link[0], link[1]))
 
-      if self.node_to_index.get(link[0]) is not None:
-        # Left node of the link is the router
-        # Right node of the link is the host
-        _lnode = self.node_to_index.get(link[0])
-        _rnode = self.node_to_index.get(link[1])
-        _net = self.customerFacingNetAllocator.getNet(_lnode, _rnode)
-        l_node = self.customerFacingNetAllocator.getRouterAddress(_lnode, _rnode)
-        r_node = self.customerFacingNetAllocator.getHostAddress(_lnode, _rnode)
-      else:
-        # Left node of the link is the host
-        # Right node of the link is the router
-        _lnode = self.host_to_index.get(link[0])
-        _rnode = self.router_to_index.get(link[1])
-        _net = self.customerFacingNetAllocator.getNet(_rnode, _lnode)
-        r_node = self.customerFacingNetAllocator.getRouterAddress(_rnode, _lnode)
-        l_node = self.customerFacingNetAllocator.getHostAddress(_rnode, _lnode)
+      _lnode = self.node_to_index.get(link[0])
+      _rnode = self.node_to_index.get(link[1])
+      _net = self.customerFacingNetAllocator.getNet(_lnode, _rnode)
+      l_node = self.customerFacingNetAllocator.getRouterAddress(_lnode, _rnode)
+      r_node = self.customerFacingNetAllocator.getHostAddress(_lnode, _rnode)
 
       iplhs = l_node.__str__()
       iprhs = r_node.__str__()
@@ -860,29 +806,15 @@ class IPv4PropertiesGenerator(object):
   def getAccessLinksProperties(self, links):
     output = []
 
-    if self.verbose == True:
-      print(net)
-
     for link in links:
       if self.verbose == True:
         print("(%s,%s)" % (link[0], link[1]))
 
-      if self.node_to_index.get(link[0]) is not None:
-        # Left node of the link is the router
-        # Right node of the link is the host
-        _lnode = self.node_to_index.get(link[0])
-        _rnode = self.node_to_index.get(link[1])
-        _net = self.accessNetAllocator.getNet(_lnode, _rnode)
-        l_node = self.accessNetAllocator.getRouterAddress(_lnode, _rnode)
-        r_node = self.accessNetAllocator.getHostAddress(_lnode, _rnode)
-      else:
-        # Left node of the link is the host
-        # Right node of the link is the router
-        _lnode = self.host_to_index.get(link[0])
-        _rnode = self.router_to_index.get(link[1])
-        _net = self.accessNetAllocator.getNet(_rnode, _lnode)
-        r_node = self.accessNetAllocator.getRouterAddress(_rnode, _lnode)
-        l_node = self.accessNetAllocator.getHostAddress(_rnode, _lnode)
+      _lnode = self.node_to_index.get(link[0])
+      _rnode = self.node_to_index.get(link[1])
+      _net = self.accessNetAllocator.getNet(_lnode, _rnode)
+      l_node = self.accessNetAllocator.getRouterAddress(_lnode, _rnode)
+      r_node = self.accessNetAllocator.getHostAddress(_lnode, _rnode)
 
       iplhs = l_node.__str__()
       iprhs = r_node.__str__()
@@ -898,29 +830,15 @@ class IPv4PropertiesGenerator(object):
   def getMgmtLinksProperties(self, links):
     output = []
 
-    if self.verbose == True:
-      print(net)
-
     for link in links:
       if self.verbose == True:
         print("(%s,%s)" % (link[0], link[1]))
 
-      if self.node_to_index.get(link[0]) is not None:
-        # Left node of the link is the router
-        # Right node of the link is the host
-        _lnode = self.node_to_index.get(link[0])
-        _rnode = self.node_to_index.get(link[1])
-        _net = self.mgmtNetAllocator.getNet(_lnode, _rnode)
-        l_node = self.mgmtNetAllocator.getControllerAddress(_lnode, _rnode)
-        r_node = self.mgmtNetAllocator.getRouterAddress(_lnode, _rnode)
-      else:
-        # Left node of the link is the host
-        # Right node of the link is the router
-        _lnode = self.host_to_index.get(link[0])
-        _rnode = self.router_to_index.get(link[1])
-        _net = self.mgmtNetAllocator.getNet(_rnode, _lnode)
-        r_node = self.mgmtNetAllocator.getRouterAddress(_rnode, _lnode)
-        l_node = self.mgmtNetAllocator.getHostAddress(_rnode, _lnode)
+      _lnode = self.node_to_index.get(link[0])
+      _rnode = self.node_to_index.get(link[1])
+      _net = self.mgmtNetAllocator.getNet(_lnode, _rnode)
+      l_node = self.mgmtNetAllocator.getControllerAddress(_lnode, _rnode)
+      r_node = self.mgmtNetAllocator.getRouterAddress(_lnode, _rnode)
 
       iplhs = l_node.__str__()
       iprhs = r_node.__str__()
