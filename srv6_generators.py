@@ -478,8 +478,8 @@ class IPv6MgmtAllocator(object):
 
     def getNet(self, controller_index, router_index):
         # Generate the customer net
-        prefix = int(IPv4Interface(IPv6MgmtAllocator.net).ip)
-        customerNet = IPv4Network(prefix | controller_index << 80 | router_index << 64)
+        prefix = int(IPv6Interface(IPv6MgmtAllocator.net).ip)
+        customerNet = IPv6Network(prefix | controller_index << 80 | router_index << 64)
         # Append prefix to the net
         customerNet = customerNet.supernet(new_prefix=IPv6MgmtAllocator.prefix)
         # Return the net
@@ -487,19 +487,19 @@ class IPv6MgmtAllocator(object):
 
     def getControllerAddress(self, controller_index, router_index):
         # Generate the host address
-        prefix = int(IPv4Interface(IPv6MgmtAllocator.net).ip)
-        hostAddress = IPv4Network(prefix | controller_index << 80 | router_index << 64 | 2)
+        prefix = int(IPv6Interface(IPv6MgmtAllocator.net).ip)
+        hostAddress = IPv6Network(prefix | controller_index << 80 | router_index << 64 | 2)
         # Remove /128 mask from the address and convert to string
-        hostAddress = IPv4Interface(hostAddress).ip.__str__()
+        hostAddress = IPv6Interface(hostAddress).ip.__str__()
         # Return the address
         return hostAddress
 
     def getRouterAddress(self, controller_index, router_index):
         # Generate the router address
-        prefix = int(IPv4Interface(IPv6MgmtAllocator.net).ip)
-        routerAddress = IPv4Network(prefix | controller_index << 80 | router_index << 64 | 1)
+        prefix = int(IPv6Interface(IPv6MgmtAllocator.net).ip)
+        routerAddress = IPv6Network(prefix | controller_index << 80 | router_index << 64 | 1)
         # Remove /128 mask from the address and convert to string
-        routerAddress = IPv4Interface(routerAddress).ip.__str__()
+        routerAddress = IPv6Interface(routerAddress).ip.__str__()
         # Return the address
         return routerAddress
 
