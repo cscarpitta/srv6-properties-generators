@@ -23,6 +23,8 @@
 # @author Pier Luigi Ventre <pierventre@hotmail.com>
 # @author Stefano Salsano <stefano.salsano@uniroma2.it>
 
+from __future__ import print_function
+
 # Store an OSPF network
 class OSPFNetwork(object):
  
@@ -43,23 +45,65 @@ class OSPFNetwork(object):
   def __str__(self):
     return "{'name':'%s', 'net':'%s', 'area':'%s'}" %(self.name, self.net, self.area)
 
+'''
+ # Encapsulate controller properties
+class ControllerProperties(object):
+  
+  def __init__(self, loopback, mgmtip, index):
+    self.loopback = loopback
+    self.mgmtip = mgmtip
+    self.index = index
+
+  def __str__(self):
+    return "{'loopback':'%s/64', 'mgmtip': '%s'}" %(self.loopback, self.mgmtip)
+'''
+
+
  # Encapsulate router properties
 class RouterProperties(object):
   
-  def __init__(self, loopback, routerid):
+  def __init__(self, loopback, routerid, routernet, mgmtip, index):
     self.loopback = loopback
     self.routerid = routerid
+    self.routernet = routernet
+    self.mgmtip = mgmtip
+    self.index = index
 
   def __str__(self):
-    return "{'loopback':'%s/128', 'routerid': '%s'}" %(self.loopback, self.routerid)
+    return "{'loopback':'%s/64', 'routerid': '%s', 'routernet': '%s', 'mgmtip': '%s'}" %(self.loopback, self.routerid, self.routernet, self.mgmtip)
+
+ # Encapsulate router properties
+class HostProperties(object):
+
+  def __init__(self, loopback, mgmtip, index):
+    self.loopback = loopback
+    self.mgmtip = mgmtip
+    self.index = index
+
+  def __str__(self):
+    return "{'loopback':'%s/64', 'mgmtip':'%s'}" %(self.loopback, self.mgmtip)
+
+'''
+# Encapsulate router properties
+class ControllerProperties(object):
+
+  def __init__(self, routerid, mgmtip, index):
+    self.routerid = routerid
+    self.mgmtip = mgmtip
+    self.index = index
+
+  def __str__(self):
+    return "{'routerid': '%s', 'mgmtip': '%s'}" %(self.routerid, self.mgmtip)
+'''
 
 # Encapsulate link properties used to build the testbed object in softfire-tiesr-deployer
 class LinkProperties(object):
 
-  def __init__(self, iplhs, iprhs, net):
+  def __init__(self, iplhs, iprhs, net, prefix):
     self.iplhs = iplhs
     self.iprhs = iprhs
     self.net = net
+    self.prefix = prefix
 
   def __str__(self):
     return "{'iplhs':'%s', 'iprhs':'%s', net':'%s'}" %(self.iplhs, self.iprhs, self.net)
